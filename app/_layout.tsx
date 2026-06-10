@@ -12,7 +12,7 @@ export default function RootLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "DueTrack",
+          title: "DashBoard",
         }}
       />
       <Stack.Screen

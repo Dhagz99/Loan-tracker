@@ -42,6 +42,41 @@ export function createBill(data: BillSchema) {
   );
 }
 
+export function createInstallmentBills(data: {
+  title: string;
+  category: string;
+  totalAmount: number;
+  terms: number;
+  firstDueDate: string;
+  notes?: string;
+}) {
+  const monthlyAmount = data.totalAmount / data.terms;
+  const firstDate = new Date(data.firstDueDate);
+
+  for (let i = 0; i < data.terms; i++) {
+    const dueDate = new Date(firstDate);
+    dueDate.setMonth(firstDate.getMonth() + i);
+
+    const formattedDueDate = dueDate.toISOString().split("T")[0];
+
+    db.runSync(
+      `
+      INSERT INTO bills 
+      (title, category, amount, dueDate, status, notes)
+      VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      [
+        `${data.title} - ${i + 1}/${data.terms}`,
+        data.category,
+        monthlyAmount,
+        formattedDueDate,
+        "unpaid",
+        data.notes ?? null,
+      ]
+    );
+  }
+}
+
 export function updateBillStatus(id: number, status: "paid" | "unpaid") {
   db.runSync(
     `

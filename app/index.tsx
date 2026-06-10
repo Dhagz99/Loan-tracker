@@ -1,8 +1,8 @@
 import { BillCard } from "@/src/components/BillCard";
 import {
     deleteBill,
-    getBills,
-    updateBillStatus,
+    getCurrentMonthBills,
+    updateBillStatus
 } from "@/src/database/bills.repository";
 import { Bill, BillDisplayStatus } from "@/src/types/bill";
 import { getBillDisplayStatus } from "@/src/utils/billStatus";
@@ -33,7 +33,7 @@ export default function DashboardScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 
   function loadBills() {
-    setBills(getBills());
+    setBills(getCurrentMonthBills());
   }
 
   useFocusEffect(
@@ -269,12 +269,11 @@ const styles = StyleSheet.create({
   filterRow: {
     gap: 8,
     paddingBottom: 14,
-    marginBottom: 6
   },
   filterButton: {
     backgroundColor: "#fff",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 9,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -297,7 +296,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
-    marginTop:5,
   },
   sectionTitle: {
     fontSize: 18,
