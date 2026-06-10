@@ -24,6 +24,7 @@ import {
   createBill,
   createInstallmentBills,
 } from "@/src/database/bills.repository";
+import { showSuccess, showError } from "@/src/utils/toast";
 
 function formatDate(date: Date) {
   return date.toISOString().split("T")[0];
@@ -69,15 +70,35 @@ export default function AddBillScreen() {
   const monthlyAmount = totalAmount > 0 && terms > 0 ? totalAmount / terms : 0;
 
   function onSubmitSingle(data: BillSchema) {
-    createBill(data);
-    singleForm.reset();
-    router.back();
+    try {
+      createBill(data);
+  
+      showSuccess("Bill added successfully");
+  
+      singleForm.reset();
+  
+      setTimeout(() => {
+        router.back();
+      }, 700);
+    } catch (error) {
+      showError("Failed to add bill");
+    }
   }
-
+  
   function onSubmitInstallment(data: InstallmentBillSchema) {
-    createInstallmentBills(data);
-    installmentForm.reset();
-    router.back();
+    try {
+      createInstallmentBills(data);
+  
+      showSuccess("Installment bills created successfully");
+  
+      installmentForm.reset();
+  
+      setTimeout(() => {
+        router.back();
+      }, 700);
+    } catch (error) {
+      showError("Failed to create installment bills");
+    }
   }
 
   return (

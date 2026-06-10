@@ -20,6 +20,7 @@ import {
   getBillById,
   updateBill,
 } from "@/src/database/bills.repository";
+import { showError, showSuccess } from "@/src/utils/toast";
 
 function formatDate(date: Date) {
   return date.toISOString().split("T")[0];
@@ -57,8 +58,17 @@ export default function EditBillScreen() {
   }, [id]);
 
   function onSubmit(data: BillSchema) {
-    updateBill(Number(id), data);
-    router.back();
+    try {
+      updateBill(Number(id), data);
+  
+      showSuccess("Bill updated successfully");
+  
+      setTimeout(() => {
+        router.back();
+      }, 700);
+    } catch (error) {
+      showError("Failed to update bill");
+    }
   }
 
   return (

@@ -6,6 +6,7 @@ import {
 } from "@/src/database/bills.repository";
 import { Bill, BillDisplayStatus } from "@/src/types/bill";
 import { getBillDisplayStatus } from "@/src/utils/billStatus";
+import { showError, showSuccess } from "@/src/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -69,13 +70,37 @@ export default function DashboardScreen() {
   }, [bills, activeFilter]);
 
   function handleToggleStatus(bill: Bill) {
-    updateBillStatus(bill.id, bill.status === "paid" ? "unpaid" : "paid");
-    loadBills();
+    try {
+      const newStatus = bill.status === "paid" ? "unpaid" : "paid";
+  
+      updateBillStatus(bill.id, newStatus);
+  
+      showSuccess(
+        newStatus === "paid"
+          ? "Bill marked as paid"
+          : "Bill marked as unpaid"
+      );
+  
+      loadBills();
+    } catch (error) {
+      console.error(error);
+  
+      showError("Failed to update bill status");
+    }
   }
-
+  
   function handleDelete(id: number) {
-    deleteBill(id);
-    loadBills();
+    try {
+      deleteBill(id);
+  
+      showSuccess("Bill deleted successfully");
+  
+      loadBills();
+    } catch (error) {
+      console.error(error);
+  
+      showError("Failed to delete bill");
+    }
   }
 
   return (
@@ -235,7 +260,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: 16,
     backgroundColor: "#f3f4f6",
   },
   header: {
@@ -263,9 +288,9 @@ const styles = StyleSheet.create({
   },
   totalCard: {
     backgroundColor: "#111827",
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 12,
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 10,
   },
   totalLabel: {
     color: "#d1d5db",
@@ -284,13 +309,13 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   summaryCard: {
     flex: 1,
     backgroundColor: "#fff",
     borderRadius: 18,
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
     borderColor: "#e5e7eb",
   },
@@ -317,7 +342,6 @@ const styles = StyleSheet.create({
 
   filterButton: {
     minWidth: 90,
-    minHeight:70,
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 999,
