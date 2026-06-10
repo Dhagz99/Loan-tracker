@@ -11,4 +11,9 @@ export type Bill = {
   status: BillStatus;
   notes?: string | null;
   createdAt: string;
+
+  loanGroupId?: string | null;
+  totalLoanAmount?: number | null;
+  termNo?: number | null;
+  totalTerms?: number | null;
 };

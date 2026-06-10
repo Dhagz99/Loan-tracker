@@ -1,7 +1,7 @@
 import { BillCard } from "@/src/components/BillCard";
 import {
     deleteBill,
-    getCurrentMonthBills,
+    getBillsByMonth,
     updateBillStatus
 } from "@/src/database/bills.repository";
 import { Bill, BillDisplayStatus } from "@/src/types/bill";
@@ -13,10 +13,9 @@ import {
     FlatList,
     Pressable,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     Text,
-    View,
+    View
 } from "react-native";
 
 type FilterTab = "all" | BillDisplayStatus;
@@ -32,14 +31,19 @@ export default function DashboardScreen() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 
+  const now = new Date();
+
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+  
   function loadBills() {
-    setBills(getCurrentMonthBills());
+    setBills(getBillsByMonth(selectedYear, selectedMonth));
   }
 
   useFocusEffect(
     useCallback(() => {
       loadBills();
-    }, [])
+    }, [selectedYear, selectedMonth])
   );
 
   const total = bills.reduce((sum, bill) => sum + Number(bill.amount), 0);
@@ -110,33 +114,69 @@ export default function DashboardScreen() {
             <Text style={styles.overdueAmount}>₱{overdue.toLocaleString()}</Text>
           </View>
         </View>
+        <View style={styles.monthRow}>
+  <Pressable
+    style={styles.monthButton}
+    onPress={() => {
+      if (selectedMonth === 1) {
+        setSelectedMonth(12);
+        setSelectedYear((prev) => prev - 1);
+      } else {
+        setSelectedMonth((prev) => prev - 1);
+      }
+    }}
+  >
+    <Ionicons name="chevron-back" size={20} color="#111827" />
+  </Pressable>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
+  <Text style={styles.monthText}>
+    {new Date(selectedYear, selectedMonth - 1).toLocaleString("default", {
+      month: "long",
+      year: "numeric",
+    })}
+  </Text>
+
+  <Pressable
+    style={styles.monthButton}
+    onPress={() => {
+      if (selectedMonth === 12) {
+        setSelectedMonth(1);
+        setSelectedYear((prev) => prev + 1);
+      } else {
+        setSelectedMonth((prev) => prev + 1);
+      }
+    }}
+  >
+    <Ionicons name="chevron-forward" size={20} color="#111827" />
+  </Pressable>
+</View>
+   <FlatList
+  data={filters}
+  horizontal
+  keyExtractor={(item) => item.value}
+  showsHorizontalScrollIndicator={false}
+  style={styles.filterList}
+  contentContainerStyle={styles.filterRow}
+  renderItem={({ item }) => {
+    const isActive = activeFilter === item.value;
+
+    return (
+      <Pressable
+        onPress={() => setActiveFilter(item.value)}
+        style={[styles.filterButton, isActive && styles.activeFilterButton]}
+      >
+        <Text
+          style={[
+            styles.filterButtonText,
+            isActive && styles.activeFilterButtonText,
+          ]}
         >
-          {filters.map((filter) => {
-            const isActive = activeFilter === filter.value;
-
-            return (
-              <Pressable
-                key={filter.value}
-                onPress={() => setActiveFilter(filter.value)}
-                style={[styles.filterButton, isActive && styles.activeFilterButton]}
-              >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    isActive && styles.activeFilterButtonText,
-                  ]}
-                >
-                  {filter.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+          {item.label}
+        </Text>
+      </Pressable>
+    );
+  }}
+/>
 
         <View style={styles.listHeader}>
           <Text style={styles.sectionTitle}>
@@ -155,6 +195,14 @@ export default function DashboardScreen() {
               bill={item}
               onToggleStatus={() => handleToggleStatus(item)}
               onDelete={() => handleDelete(item.id)}
+              onEdit={() =>
+                router.push({
+                  pathname: "/edit-bill/[id]",
+                  params: {
+                    id: String(item.id),
+                  },
+                })
+              }
             />
           )}
           ListEmptyComponent={
@@ -216,8 +264,8 @@ const styles = StyleSheet.create({
   totalCard: {
     backgroundColor: "#111827",
     borderRadius: 24,
-    padding: 22,
-    marginBottom: 14,
+    padding: 20,
+    marginBottom: 12,
   },
   totalLabel: {
     color: "#d1d5db",
@@ -266,17 +314,18 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#dc2626",
   },
-  filterRow: {
-    gap: 8,
-    paddingBottom: 14,
-  },
+
   filterButton: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 9,
+    minWidth: 90,
+    minHeight:70,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 999,
+    backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#e5e7eb",
+    justifyContent: "center",
+    alignItems: "center",
   },
   activeFilterButton: {
     backgroundColor: "#2563eb",
@@ -284,12 +333,12 @@ const styles = StyleSheet.create({
   },
   filterButtonText: {
     color: "#374151",
+    fontSize: 14,
     fontWeight: "700",
-    fontSize: 13,
-    textTransform: "capitalize",
   },
+  
   activeFilterButtonText: {
-    color: "#fff",
+    color: "#ffffff",
   },
   listHeader: {
     flexDirection: "row",
@@ -336,5 +385,39 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#6b7280",
     marginTop: 4,
+  },
+
+  monthRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  monthButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  monthText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111827",
+  },
+  filterList: {
+    minHeight:40,
+    maxHeight: 48,
+    marginBottom: 12,
+  },
+  filterRow: {
+    gap: 8,
+    alignItems: "center",
   },
 });

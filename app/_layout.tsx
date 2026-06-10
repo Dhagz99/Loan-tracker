@@ -22,6 +22,13 @@ export default function RootLayout() {
           presentation: "modal",
         }}
       />
+      <Stack.Screen
+        name="edit-bill/[id]"
+        options={{
+          title: "Edit Bill",
+          presentation: "modal",
+        }}
+      />
     </Stack>
   );
 }

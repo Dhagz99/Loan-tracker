@@ -1,18 +1,21 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Bill } from "../types/bill";
 import { getBillDisplayStatus } from "@/src/utils/billStatus";
+import { getLoanRemainingBalance } from "@/src/utils/loan";
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Bill } from "../types/bill";
 
 type Props = {
   bill: Bill;
   onToggleStatus: () => void;
   onDelete: () => void;
+  onEdit: () => void;
 };
 
-export function BillCard({ bill, onToggleStatus, onDelete }: Props) {
+export function BillCard({ bill, onToggleStatus, onDelete, onEdit  }: Props) {
   const displayStatus = getBillDisplayStatus(bill);
   const isPaid = displayStatus === "paid";
   const isOverdue = displayStatus === "overdue";
+  const loanSummary = getLoanRemainingBalance(bill);
 
   return (
     <View style={styles.card}>
@@ -53,6 +56,23 @@ export function BillCard({ bill, onToggleStatus, onDelete }: Props) {
         </View>
       </View>
 
+      {loanSummary && (
+        <View style={styles.loanBox}>
+          <Text style={styles.loanText}>
+            Total Loan: ₱{loanSummary.totalLoanAmount.toLocaleString()}
+          </Text>
+          <Text style={styles.loanText}>
+            Paid: ₱{loanSummary.paidAmount.toLocaleString()}
+          </Text>
+          <Text style={styles.remainingText}>
+            Remaining: ₱{loanSummary.remainingBalance.toLocaleString()}
+          </Text>
+          <Text style={styles.loanText}>
+            Terms Paid: {loanSummary.paidTerms}/{loanSummary.totalTerms}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.actions}>
         <Pressable
           onPress={onToggleStatus}
@@ -61,6 +81,9 @@ export function BillCard({ bill, onToggleStatus, onDelete }: Props) {
           <Text style={styles.actionText}>
             {isPaid ? "Mark Unpaid" : "Mark Paid"}
           </Text>
+        </Pressable>
+        <Pressable onPress={onEdit} style={styles.editButton}>
+             <Ionicons name="create-outline" size={18} color="#2563eb" />
         </Pressable>
 
         <Pressable onPress={onDelete} style={styles.deleteButton}>
@@ -148,6 +171,22 @@ const styles = StyleSheet.create({
   overdueText: {
     color: "#991b1b",
   },
+  loanBox: {
+    backgroundColor: "#f9fafb",
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 12,
+    gap: 4,
+  },
+  loanText: {
+    fontSize: 13,
+    color: "#374151",
+  },
+  remainingText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#dc2626",
+  },
   actions: {
     flexDirection: "row",
     gap: 10,
@@ -173,6 +212,13 @@ const styles = StyleSheet.create({
     width: 44,
     borderRadius: 12,
     backgroundColor: "#fef2f2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editButton: {
+    width: 44,
+    borderRadius: 12,
+    backgroundColor: "#eff6ff",
     alignItems: "center",
     justifyContent: "center",
   },

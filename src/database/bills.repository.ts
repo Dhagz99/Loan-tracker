@@ -9,10 +9,8 @@ export function getBills(): Bill[] {
   `);
 }
 
-export function getCurrentMonthBills(): Bill[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
+export function getBillsByMonth(year: number, month: number): Bill[] {
+  const formattedMonth = String(month).padStart(2, "0");
 
   return db.getAllSync<Bill>(
     `
@@ -20,7 +18,24 @@ export function getCurrentMonthBills(): Bill[] {
     WHERE dueDate LIKE ?
     ORDER BY dueDate ASC
     `,
-    [`${year}-${month}%`]
+    [`${year}-${formattedMonth}%`]
+  );
+}
+
+export function getCurrentMonthBills(): Bill[] {
+  const now = new Date();
+
+  return getBillsByMonth(now.getFullYear(), now.getMonth() + 1);
+}
+
+export function getLoanBillsByGroup(loanGroupId: string): Bill[] {
+  return db.getAllSync<Bill>(
+    `
+    SELECT * FROM bills
+    WHERE loanGroupId = ?
+    ORDER BY dueDate ASC
+    `,
+    [loanGroupId]
   );
 }
 
@@ -52,6 +67,7 @@ export function createInstallmentBills(data: {
 }) {
   const monthlyAmount = data.totalAmount / data.terms;
   const firstDate = new Date(data.firstDueDate);
+  const loanGroupId = `${data.title}-${Date.now()}`;
 
   for (let i = 0; i < data.terms; i++) {
     const dueDate = new Date(firstDate);
@@ -62,8 +78,19 @@ export function createInstallmentBills(data: {
     db.runSync(
       `
       INSERT INTO bills 
-      (title, category, amount, dueDate, status, notes)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (
+        title, 
+        category, 
+        amount, 
+        dueDate, 
+        status, 
+        notes,
+        loanGroupId,
+        totalLoanAmount,
+        termNo,
+        totalTerms
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         `${data.title} - ${i + 1}/${data.terms}`,
@@ -72,6 +99,10 @@ export function createInstallmentBills(data: {
         formattedDueDate,
         "unpaid",
         data.notes ?? null,
+        loanGroupId,
+        data.totalAmount,
+        i + 1,
+        data.terms,
       ]
     );
   }
@@ -97,3 +128,48 @@ export function deleteBill(id: number) {
     [id]
   );
 }
+
+
+export function getBillById(id: number): Bill | null {
+    const result = db.getFirstSync<Bill>(
+      `
+      SELECT * FROM bills
+      WHERE id = ?
+      `,
+      [id]
+    );
+  
+    return result ?? null;
+  }
+  
+  export function updateBill(
+    id: number,
+    data: {
+      title: string;
+      category: string;
+      amount: number;
+      dueDate: string;
+      notes?: string;
+    }
+  ) {
+    db.runSync(
+      `
+      UPDATE bills
+      SET 
+        title = ?,
+        category = ?,
+        amount = ?,
+        dueDate = ?,
+        notes = ?
+      WHERE id = ?
+      `,
+      [
+        data.title,
+        data.category,
+        Number(data.amount),
+        data.dueDate,
+        data.notes ?? null,
+        id,
+      ]
+    );
+  }
